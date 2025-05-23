@@ -6,4 +6,5 @@ void evalence(int vers)
 {
    TINKER_FCALL2(acc0, cu1, evalence, vers);
 }
+
 }

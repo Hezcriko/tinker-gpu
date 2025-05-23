@@ -144,7 +144,10 @@ void Spatial::dataAlloc(SpatialUnit& u, int n, double cutoff, double buffer, con
 
    darray::allocate(st.cap_nakpl, &st.iakpl);
    darray::allocate(st.nak * Spatial::LSTCAP, &st.iak);
+   darray::allocate(st.nak * Spatial::LSTCAP, &st.iak_idmap);
+   // darray::allocate(st.nak * Spatial::LSTCAP, &st.iak_idmap1, &st.iak_idmap2);
    darray::allocate(st.nak * Spatial::LSTCAP * 32, &st.lst);
+   darray::allocate(st.nak * Spatial::LSTCAP * 32, &st.lst_tmp);
 
    darray::allocate(st.nakp, &st.iakpl_rev);
    darray::allocate(st.nakpk, &st.akpf);

@@ -20,6 +20,7 @@ bonded/estrtor.cpp
 bonded/etors.cpp
 bonded/etortor.cpp
 bonded/eurey.cpp
+bonded/ennvalence.cpp
 box.cpp
 compilers.cpp
 cudalib.cpp
@@ -63,6 +64,7 @@ mechanic2.cpp
 mod.cpp
 molecule.cpp
 nblist.cpp
+nn.cpp
 platform.cpp
 pme.cpp
 potent.cpp

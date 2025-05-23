@@ -3,7 +3,7 @@
 #include "macro.hh"
 
 namespace tinker { namespace params {
-const int maxprm = 25000;
+const int maxprm = 250000;
 extern int& nprm;
 extern char (&prmline)[maxprm][240];
 

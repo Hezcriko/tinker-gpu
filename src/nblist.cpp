@@ -11,6 +11,7 @@
 #include "ff/potent.h"
 #include "ff/spatial.h"
 #include "ff/switch.h"
+#include "nn/nn.h"
 #include "tool/externfunc.h"
 #include "tool/thrustcache.h"
 #include <tinker/detail/bound.hh>
@@ -201,6 +202,17 @@ Nbl dsplistVersion()
    }
    return u;
 }
+
+Nbl nnlistVersion()
+{
+   Nbl u;
+   if (not use(Potent::NNVAL)) {
+      u = Nbl::UNDEFINED;
+   } else {
+      u = Nbl::SPATIAL;
+   }
+   return u;
+}
 }
 
 namespace tinker {
@@ -318,6 +330,7 @@ void nblistData(RcOp op)
       uspatial_v2_unit.close();
       mspatial_v2_unit.close();
       dspspatial_v2_unit.close();
+      nnspatial_v2_unit.close();
 
       ThrustCache::deallocate();
 #endif
@@ -475,6 +488,23 @@ void nblistData(RcOp op)
       }
    }
 
+   // nnlist
+   u = nnlistVersion();
+   cut = switchOff(Switch::NN);
+   buf = neigh::lbuffer;
+   if (u & Nbl::SPATIAL) { 
+      auto& un2 = nnspatial_v2_unit;
+      if (op & RcOp::ALLOC) {
+         spatialAlloc(un2, n, cut, buf, x, y, z, 0);
+      }
+
+      if (op & RcOp::INIT) {
+         un2->nblist4nn = false;
+         spatialBuild(un2);
+      }
+   }
+
+
 #if TINKER_CUDART
    if (alloc_thrust_cache)
       ThrustCache::allocate();
@@ -601,6 +631,18 @@ void nblistRefresh()
    }
    if (u & Nbl::SPATIAL) {
       auto& un2 = dspspatial_v2_unit;
+      if (rc_flag & calc::traj) {
+         un2->x = x;
+         un2->y = y;
+         un2->z = z;
+      }
+      spatialUpdate(un2);
+   }
+
+   // nnlist
+   u = nnlistVersion();
+   if (u & Nbl::SPATIAL) {
+      auto& un2 = nnspatial_v2_unit;
       if (rc_flag & calc::traj) {
          un2->x = x;
          un2->y = y;

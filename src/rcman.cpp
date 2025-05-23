@@ -38,6 +38,7 @@ void finish()
 #include "ff/energy.h"
 #include "ff/molecule.h"
 #include "ff/nblist.h"
+#include "nn/nn.h"
 #include "md/misc.h"
 #include "md/osrw.h"
 #include "md/pq.h"
@@ -51,6 +52,7 @@ void deviceData(RcOp op)
    RcMan rand42{randomData, op};
    RcMan pf42{platformData, op};
    RcMan gpu42{gpuData, op};
+   RcMan nn42{nnData, op};
 
    // device
    RcMan cl42{cudalibData, op};
@@ -58,6 +60,9 @@ void deviceData(RcOp op)
    RcMan box42{boxData, op};
    RcMan n42{nData, op};
    RcMan mass42{massData, op};
+   // RcMan tag42{tagData, op};
+   // RcMan class42{classData, op};
+   RcMan atomic42{atomicData, op};
    RcMan xyz42{xyzData, op};
    RcMan cpl42{coupleData, op};
    RcMan molecule42{moleculeData, op};

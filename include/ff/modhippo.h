@@ -14,7 +14,7 @@ namespace tinker {
 TINKER_EXTERN real* bflx;
 TINKER_EXTERN real (*aflx)[2];
 TINKER_EXTERN real (*abflx)[2];
-TINKER_EXTERN int* atomic;
+// TINKER_EXTERN int* atomic;  // moved to atom.h, because nn terms need atomic numbers as well.
 TINKER_EXTERN int (*balist)[2];
 
 TINKER_EXTERN real* mono0;

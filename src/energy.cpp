@@ -70,6 +70,8 @@ static bool fts(std::string eng, bool& use_flag, unsigned tsflag, const TimeScal
 #include "ff/nblist.h"
 #include "ff/pmestream.h"
 #include "ff/potent.h"
+#include "ff/molecule.h"
+#include "nn/nn.h"
 #include <tinker/detail/mplpot.hh>
 #include <tinker/detail/polpot.hh>
 
@@ -176,7 +178,7 @@ void energy_core(int vers, unsigned tsflag, const TimeScaleConfig& tsconfig)
       bool calc_val = use(Potent::BOND) or use(Potent::ANGLE) or use(Potent::STRBND) or use(Potent::UREY)
          or use(Potent::OPBEND) or use(Potent::IMPROP) or use(Potent::IMPTORS) or use(Potent::TORSION)
          or use(Potent::PITORS) or use(Potent::STRTOR) or use(Potent::ANGTOR) or use(Potent::TORTOR)
-         or use(Potent::GEOM);
+         or use(Potent::GEOM) or use(Potent::NNVAL);
       if (calc_val and tscfg("evalence", ecore_val))
          evalence(vers);
    } else {
@@ -396,12 +398,14 @@ void energy(int vers, unsigned tsflag, const TimeScaleConfig& tsconfig)
       for (int iv = 0; iv < 9; ++iv)
          vir[iv] = virial_valence[iv] + virial_vdw[iv] + virial_elec[iv];
    }
+
    if (do_g) {
       if (ecore_vdw and gx_vdw)
          sumGradient(gx, gy, gz, gx_vdw, gy_vdw, gz_vdw);
       if (ecore_ele and gx_elec)
          sumGradient(gx, gy, gz, gx_elec, gy_elec, gz_elec);
    }
+
 }
 
 void energy(int vers)
@@ -420,6 +424,7 @@ void energyData(RcOp op)
 
    // bonded terms
 
+   RcMan ennvalence42{ennvalenceData, op};
    RcMan ebond42{ebondData, op};
    RcMan eangle42{eangleData, op};
    RcMan estrbnd42{estrbndData, op};

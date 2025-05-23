@@ -78,6 +78,7 @@ extern "C"
 #   define REAL_SIGN     copysign
 // #   define REAL_ERFC     erfc
 #   define REAL_ERFC_V2(x, expterm) (1 - erf(x))
+#   define REAL_LOG      log
 #endif
 
 // float
@@ -102,6 +103,7 @@ extern "C"
 // #   define REAL_ERFC     erfcf
 // #   define REAL_ERFC(x)  (1 - erff(x))
 #   define REAL_ERFC_V2(x, expterm) tinkerErfcfHastings2Args((x), (expterm))
+#   define REAL_LOG      logf
 #endif
 
 #ifdef _OPENACC

@@ -51,40 +51,43 @@ static void xAnalyzeE()
    const char* fmt = " %-29s %18.4f %16d\n";
 
    if (use(Potent::BOND))
-      print(out, fmt, "Bond Stretching", energy_eb, countBondedTerm(Potent::BOND));
+      print(out, fmt, "Bond Stretching", energy_eb, countBondedTerm(Potent::BOND) - nbond_skipped);
 
    if (use(Potent::ANGLE))
-      print(out, fmt, "Angle Bending", energy_ea, countBondedTerm(Potent::ANGLE));
+      print(out, fmt, "Angle Bending", energy_ea, countBondedTerm(Potent::ANGLE) - nangle_skipped);
 
    if (use(Potent::STRBND))
-      print(out, fmt, "Stretch-Bend", energy_eba, countBondedTerm(Potent::STRBND));
+      print(out, fmt, "Stretch-Bend", energy_eba, countBondedTerm(Potent::STRBND) - nstrbnd_skipped);
 
    if (use(Potent::UREY))
-      print(out, fmt, "Urey-Bradley", energy_eub, countBondedTerm(Potent::UREY));
+      print(out, fmt, "Urey-Bradley", energy_eub, countBondedTerm(Potent::UREY) - nurey_skipped);
 
    if (use(Potent::OPBEND))
-      print(out, fmt, "Out-of-Plane Bend", energy_eopb, countBondedTerm(Potent::OPBEND));
+      print(out, fmt, "Out-of-Plane Bend", energy_eopb, countBondedTerm(Potent::OPBEND) - nopbend_skipped);
 
    if (use(Potent::IMPROP))
-      print(out, fmt, "Improper Dihedral", energy_eid, countBondedTerm(Potent::IMPROP));
+      print(out, fmt, "Improper Dihedral", energy_eid, countBondedTerm(Potent::IMPROP) - niprop_skipped);
 
    if (use(Potent::IMPTORS))
-      print(out, fmt, "Improper Torsion", energy_eit, countBondedTerm(Potent::IMPTORS));
+      print(out, fmt, "Improper Torsion", energy_eit, countBondedTerm(Potent::IMPTORS) - nitors_skipped);
 
    if (use(Potent::TORSION))
-      print(out, fmt, "Torsional Angle", energy_et, countBondedTerm(Potent::TORSION));
+      print(out, fmt, "Torsional Angle", energy_et, countBondedTerm(Potent::TORSION) - ntors_skipped);
 
    if (use(Potent::PITORS))
-      print(out, fmt, "Pi-Orbital Torsion", energy_ept, countBondedTerm(Potent::PITORS));
+      print(out, fmt, "Pi-Orbital Torsion", energy_ept, countBondedTerm(Potent::PITORS) - npitors_skipped);
 
    if (use(Potent::STRTOR))
-      print(out, fmt, "Stretch-Torsion", energy_ebt, countBondedTerm(Potent::STRTOR));
+      print(out, fmt, "Stretch-Torsion", energy_ebt, countBondedTerm(Potent::STRTOR) - nstrtor_skipped);
 
    if (use(Potent::ANGTOR))
-      print(out, fmt, "Angle-Torsion", energy_eat, countBondedTerm(Potent::ANGLE));
+      print(out, fmt, "Angle-Torsion", energy_eat, countBondedTerm(Potent::ANGLE) - nangtor_skipped);
 
    if (use(Potent::TORTOR))
-      print(out, fmt, "Torsion-Torsion", energy_ett, countBondedTerm(Potent::TORTOR));
+      print(out, fmt, "Torsion-Torsion", energy_ett, countBondedTerm(Potent::TORTOR) - ntortor_skipped);
+
+   if (use(Potent::NNVAL))
+      print(out, fmt, "NN Valence", energy_ennval, countBondedTerm(Potent::NNVAL));
 
    if (use(Potent::VDW))
       print(out, fmt, "Van der Waals", energy_ev, countReduce(nev));
