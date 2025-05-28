@@ -30,7 +30,7 @@ public:
    /// Neighbor relationship is usually considered symmetric, as to permutation of i and j, and stored as pairs.
    /// However, for neural network (NN) terms, the symmetry is not wanted. we need an array of all neighbors for each atom i.
    /// Turn on this flag to create neighbor list for NN terms.
-   bool nblist4nn = true;  
+   bool nblist4nn = false;  
 
    /// \ingroup nblist
    struct alignas(16) Center

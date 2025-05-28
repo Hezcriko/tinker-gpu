@@ -30,6 +30,7 @@ egvop.cpp
 elec.cpp
 energy.cpp
 energybuffer.cpp
+ennintermol.cpp
 errlinux.cpp
 errprint.cpp
 evalence.cpp

@@ -4,6 +4,7 @@
 #include "ff/echarge.h"
 #include "ff/energy.h"
 #include "ff/evalence.h"
+#include "ff/ennintermol.h"
 #include "ff/evdw.h"
 #include "ff/hippo/edisp.h"
 #include "ff/hippo/erepel.h"
@@ -109,6 +110,9 @@ static void xAnalyzeE()
 
    if (use(Potent::CHGTRN))
       print(out, fmt, "Charge Transfer", energy_ect, countReduce(nct));
+
+   if (use(Potent::NNMET))
+      print(out, fmt, "NN Metal", energy_ennmet, nennmet);
 
    if (use(Potent::GEOM))
       print(out, fmt, "Geometric Restraints", energy_eg, countBondedTerm(Potent::GEOM));

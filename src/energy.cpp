@@ -21,6 +21,8 @@ const TimeScaleConfig& defaultTSConfig()
 
       {"evalence", 0},
 
+      {"ennintermol", 0},
+
       {"evdw", 0},
 
       {"echarge", 0},
@@ -62,6 +64,7 @@ static bool fts(std::string eng, bool& use_flag, unsigned tsflag, const TimeScal
 #include "ff/echglj.h"
 #include "ff/evalence.h"
 #include "ff/evdw.h"
+#include "ff/ennintermol.h"
 #include "ff/hippo/echgtrn.h"
 #include "ff/hippo/edisp.h"
 #include "ff/hippo/empole.h"
@@ -79,6 +82,7 @@ namespace tinker {
 static bool ecore_val;
 static bool ecore_vdw;
 static bool ecore_ele;
+static bool ecore_nnintermol;
 
 static bool amoeba_emplar(int vers)
 {
@@ -162,6 +166,13 @@ static bool hippo_epolar(int vers)
    return use(Potent::POLAR);
 }
 
+static bool ennintermol(int vers)
+{
+   if (use(Potent::NNMET))
+      return true;
+   return false;
+}
+
 void energy_core(int vers, unsigned tsflag, const TimeScaleConfig& tsconfig)
 {
 #define tscfg(x, f) fts(x, f, tsflag, tsconfig)
@@ -173,6 +184,7 @@ void energy_core(int vers, unsigned tsflag, const TimeScaleConfig& tsconfig)
    ecore_val = false;
    ecore_vdw = false;
    ecore_ele = false;
+   ecore_nnintermol = false;
 
    if (pltfm_config & Platform::CUDA) {
       bool calc_val = use(Potent::BOND) or use(Potent::ANGLE) or use(Potent::STRBND) or use(Potent::UREY)
@@ -229,6 +241,10 @@ void energy_core(int vers, unsigned tsflag, const TimeScaleConfig& tsconfig)
    }
 
    // non-bonded terms
+
+   if (ennintermol(vers))
+      if (tscfg("ennintermol", ecore_nnintermol))
+         ennintermol_cu(vers);
 
    if (amoeba_evdw(vers))
       if (tscfg("evdw", ecore_vdw))
@@ -367,6 +383,8 @@ void energy(int vers, unsigned tsflag, const TimeScaleConfig& tsconfig)
          }
       }
       esum = energy_valence + energy_vdw + energy_elec;
+      if (ennintermol(vers))
+         esum += energy_nnintermol;
    }
    if (do_v) {
       if (!rc_a) {
@@ -444,6 +462,8 @@ void energyData(RcOp op)
 
    // non-bonded terms
 
+   RcMan ennmetal42{ennmetalData, op};
+   
    RcMan vdwsSoftcore42{vdwSoftcoreData, op};
    RcMan evdw42{evdwData, op};
 

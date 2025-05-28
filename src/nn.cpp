@@ -134,6 +134,8 @@ void nnData(RcOp op)
       for (int i=0; i < nnterms.size(); i++) {
          if (nnterms[i][0] == "valence") {
             use_nnvalence = true;
+         } else if (nnterms[i][0] == "metal") {
+            use_nnmetal = true;
          } else {
             printf(" Unrecognized nnterm: %s\n", nnterms[i][0].c_str());
          }
@@ -640,6 +642,8 @@ void NeuralNetworkPotential::initialize()
 
 void NeuralNetworkPotential::add_component(const std::string &comp_name, const std::vector<real> &comp_prms)
 {
+   // use pointers instead of raw objects for ploymorphism and better efficiency with push_back
+   // use smart pointers for easy memory management
    if (comp_name == "aev") {
       aev = std::shared_ptr<AtomicEnvironmentVectorLayer>(new AtomicEnvironmentVectorLayer(comp_prms)); 
    } else if (comp_name == "nn") {

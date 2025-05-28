@@ -65,6 +65,9 @@ bool use(Potent term)
    case Potent::NNVAL:
       val = use_nnvalence;
       break;
+   case Potent::NNMET:
+      val = use_nnmetal;
+      break;
 
       // misc. terms
 

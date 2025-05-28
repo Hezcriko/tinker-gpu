@@ -313,28 +313,12 @@ void spatialStep3(int nak, int* restrict akpf, int* nakpl_ptr0, //
    int ns1, int (*restrict js1)[2],                             //
    int ns2, int (*restrict js2)[2],                             //
    int ns3, int (*restrict js3)[2],                             //
-   int ns4, int (*restrict js4)[2], 
-   bool nblist4nn, const Spatial::SortedAtom* restrict sorted, 
-   int ngrps_nn, const int* restrict grps_nn, const int* restrict grplist)
+   int ns4, int (*restrict js4)[2])
 {
    // int idx = 13;
    // D.1 Pairwise flag for (block i - block i) is always set.
    for (int i = threadIdx.x + blockIdx.x * blockDim.x; i < nak; i += blockDim.x * gridDim.x) {
-      if (nblist4nn) {
-         spatialStep3AtomicOr(i, i, akpf, nakpl_ptr0);
-      } else {
-         // do not do the block that does not contain any nn atom.
-         for (int ii = 0; ii < WARP_SIZE; ii++) {
-            int atomi = i * WARP_SIZE + ii;
-            int gi = grplist[sorted[atomi].unsorted];
-            for (int grps_i = 0; grps_i < ngrps_nn; grps_i++){
-               if (gi == grps_nn[grps_i]){
-                  spatialStep3AtomicOr(i, i, akpf, nakpl_ptr0);
-                  break;
-               }
-            }
-         }
-      }
+      spatialStep3AtomicOr(i, i, akpf, nakpl_ptr0);
    }
 
    // pairwise flag
@@ -509,28 +493,8 @@ void spatialStep5(const int* restrict bnum, const int* restrict iakpl_rev, int n
    // All threads in this warp cache the same "center" info.
    // Each thread holds the position of a unique atom.
    // `nblist4nn` is for controlling whether to create arrays of neighbors for NN terms or list of pairs for tranditional AMOEBA terms.
-   __shared__ int incl_block[BLOCK_DIM / WARP_SIZE];
-   for (int wy = iwarp; wy < (nblist4nn ? nak - 1 : nak); wy += nwarp) {
+   for (int wy = iwarp; wy < (nblist4nn ? nak : nak - 1); wy += nwarp) {
       int atomi = wy * WARP_SIZE + ilane;
-
-      if (not nblist4nn){
-         incl_block[threadIdx.x / WARP_SIZE] = 0;
-         int atomi_unsorted = sorted[atomi].unsorted;
-         int gi = grplist[atomi_unsorted];
-         bool incl_i = false;
-         for (int grps_i = 0; grps_i < ngrps_nn; grps_i++){
-            if (gi == grps_nn[grps_i]){
-               incl_i = true;
-               break;
-            }
-         }
-         atomic_add(incl_i ? 1 << ilane : 0, incl_block, threadIdx.x / WARP_SIZE);
-         // TODO use warp vote functions instead for the above line
-         __syncwarp();
-         if (incl_block[threadIdx.x / WARP_SIZE] == 0) {
-               continue;
-         }
-      }
 
       real xi = sorted[atomi].x;
       real yi = sorted[atomi].y;
@@ -566,7 +530,7 @@ void spatialStep5(const int* restrict bnum, const int* restrict iakpl_rev, int n
       //
       //    Collecting the bits of wx from every thread in this warp, a 32-bit integer is obtained.
       //    All threads in this warp will then work on these atom blocks together, one at a time.
-      for (int wx0 = nblist4nn ? wy + 1 : 0; wx0 < nak; wx0 += WARP_SIZE) {
+      for (int wx0 = nblist4nn ? 0 : wy + 1; wx0 < nak; wx0 += WARP_SIZE) {
          int wx = wx0 + ilane;
          bool calcwx = wx < nak; // wx cannot exceed nak-1.
 
@@ -725,7 +689,7 @@ void spatialStep5(const int* restrict bnum, const int* restrict iakpl_rev, int n
                int bufp = i * WARP_SIZE + ilane;
                int val = buffer[bufp];
                __syncwarp();
-               int num = nblist4nn ? 0 : -1;  // use different padding values for nblist for NN and non-NN terms
+               int num = nblist4nn ? -1 : 0;  // use different padding values for nblist for NN and non-NN terms
                num = bufp < nknb ? val : num;
                lst[(pos + i) * WARP_SIZE + ilane] = num;
             }
@@ -799,9 +763,7 @@ void spatialDataInit_cu(SpatialUnit u)
       u->nak, u->akpf, nakpl_ptr0,    //
       u->bnum, u->nstype,             //
       si1.ns, si1.js, si2.ns, si2.js, //
-      si3.ns, si3.js, si4.ns, si4.js, 
-      u->nblist4nn, u->sorted, 
-      ngrps_nnvalence, grps_nnvalence, grp.grplist);
+      si3.ns, si3.js, si4.ns, si4.js);
    darray::copyout(g::q0, 1, &u->nakpl, nakpl_ptr0);
    waitFor(g::q0);
    if (WARP_SIZE + u->nakpl > (unsigned)u->cap_nakpl) {
@@ -851,7 +813,7 @@ void spatialDataInit_cu(SpatialUnit u)
    }
 
    // TODO sort iak and lst
-   if (not u->nblist4nn) {
+   if (u->nblist4nn) {
       std::vector<int> idmap_host(u->niak);
       std::iota(idmap_host.begin(), idmap_host.end(), 0);
       darray::copyin(g::q0, u->niak, u->iak_idmap, idmap_host.data());

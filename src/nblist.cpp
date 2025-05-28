@@ -206,7 +206,7 @@ Nbl dsplistVersion()
 Nbl nnlistVersion()
 {
    Nbl u;
-   if (not use(Potent::NNVAL)) {
+   if (not (use(Potent::NNVAL) | use(Potent::NNMET))) {
       u = Nbl::UNDEFINED;
    } else {
       u = Nbl::SPATIAL;
@@ -499,7 +499,7 @@ void nblistData(RcOp op)
       }
 
       if (op & RcOp::INIT) {
-         un2->nblist4nn = false;
+         un2->nblist4nn = true;
          spatialBuild(un2);
       }
    }

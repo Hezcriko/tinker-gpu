@@ -114,7 +114,7 @@ void massData(RcOp op)
 
 void atomicData(RcOp op)
 {
-   if (not (use(Potent::CHGFLX) | use(Potent::NNVAL)))
+   if (not (use(Potent::CHGFLX) | use(Potent::NNVAL) | use(Potent::NNMET)))
       return;
 
    if (op & RcOp::DEALLOC) {

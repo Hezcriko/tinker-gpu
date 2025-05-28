@@ -182,9 +182,10 @@ public:
 
 // NN data
 TINKER_EXTERN real nncut;  // distance cutoff for neural network neighborlist
-TINKER_EXTERN std::vector<NeuralNetworkPotential> nnps;
-TINKER_EXTERN std::vector<std::vector<std::string>> nnterms;
+TINKER_EXTERN std::vector<NeuralNetworkPotential> nnps;  // array of neural network potentials defined in the prm/key file
+TINKER_EXTERN std::vector<std::vector<std::string>> nnterms;  // array of nnterms defined in the prm/key file, `nnterm` is a keyword for assigning which nnp to use for which group of atoms.
 TINKER_EXTERN bool use_nnvalence;
+TINKER_EXTERN bool use_nnmetal;
 // grad data arrays for temp use
 TINKER_EXTERN grad_prec* gx_tmp;
 TINKER_EXTERN grad_prec* gy_tmp;

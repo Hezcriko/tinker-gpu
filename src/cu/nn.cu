@@ -107,7 +107,7 @@ void ref_nblist_cu1(NBLIST_PARAMS)
                 // first, compute radial terms for i-j,
                 int jjlane = (ilane + jj) & (WARP_SIZE - 1);  // local lane index for jj in the warp
                 int gjjlane = jjlane + threadIdx.x - ilane;  // global lane index for jj in the block
-                bool incl_ij = gi == gj[gjjlane] and incl_i;
+                bool incl_ij = incl_i;
                 int jjid = jid - ilane + jjlane;  // for detection of out-of-bounds for valid atoms.
                 int j_sorted;
                 if (task_num == 0) {
