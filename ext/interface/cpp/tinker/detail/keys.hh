@@ -3,7 +3,7 @@
 #include "macro.hh"
 
 namespace tinker { namespace keys {
-const int maxkey = 25000;
+const int maxkey = 250000;
 extern int& nkey;
 extern char (&keyline)[maxkey][240];
 

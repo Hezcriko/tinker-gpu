@@ -17,13 +17,15 @@ void cfluxData(RcOp op)
 
    if (op & RcOp::DEALLOC) {
       darray::deallocate(bflx, aflx, abflx);
-      darray::deallocate(pdelta, atomic, balist);
+      darray::deallocate(pdelta, balist);
+      // darray::deallocate(pdelta, atomic, balist);  // `atomic` moved to atom.cpp
       darray::deallocate(mono0);
       darray::deallocate(decfx, decfy, decfz, pot);
    }
 
    if (op & RcOp::ALLOC) {
-      darray::allocate(n, &pdelta, &atomic);
+      darray::allocate(n, &pdelta);
+      // darray::allocate(n, &pdelta, &atomic);  // `atomic` moved to atom.cpp
       darray::allocate(n, &mono0);
       darray::allocate(nbond, &bflx);
       darray::allocate(nangle, &aflx, &abflx, &balist);
@@ -42,7 +44,7 @@ void cfluxData(RcOp op)
       darray::copyin(g::q0, nbond, bflx, cflux::bflx);
       darray::copyin(g::q0, nangle, aflx, cflux::aflx);
       darray::copyin(g::q0, nangle, abflx, cflux::abflx);
-      darray::copyin(g::q0, n, atomic, atomid::atomic);
+      // darray::copyin(g::q0, n, atomic, atomid::atomic);  // `atomic` moved to atom.cpp
       darray::copyin(g::q0, n, mono0, mpole::mono0);
 
       if (rc_flag & calc::grad)

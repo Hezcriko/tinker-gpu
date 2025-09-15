@@ -1,6 +1,6 @@
 [submodule "tinker"]
 	path = tinker
-	url = https://github.com/TinkerTools/Tinker
+	url = https://github.com/CanisW/tinker.git
 [submodule "ext/ext/catch2v3"]
 	path = ext/ext/catch2v3
 	url = https://github.com/catchorg/Catch2

@@ -27,6 +27,12 @@ public:
    };
 
    /// \ingroup nblist
+   /// Neighbor relationship is usually considered symmetric, as to permutation of i and j, and stored as pairs.
+   /// However, for neural network (NN) terms, the symmetry is not wanted. we need an array of all neighbors for each atom i.
+   /// Turn on this flag to create neighbor list for NN terms.
+   bool nblist4nn = false;  
+
+   /// \ingroup nblist
    struct alignas(16) Center
    {
       real x, y, z, w;
@@ -61,13 +67,15 @@ public:
 
    int* iakpl; ///< List of block pairs subject to exclusion rules. Length #nakpl.
                ///< The pair `(x,y)` was encoded via triangular number and stored as `tri(x)+y`.
-   int* lst;   ///< Neighbors of a block of atoms.
+   int* lst;   ///< Neighbors of a block of atoms. This var stores the `Nij` below.
                ///< For a pair `(Bi,Nij)`, \c Nij is the j-th neighbor of atoms in block \c Bi.
                ///< These neighbors of \c Bi are padded with impossible atom number
                ///< to make the count of \c Nij a multiple of #BLOCK.
-   int* iak;   ///< Block numbers \c Bi. Every \c Bi is duplicated several times
-               ///< to match its padded neighbors in #lst.
+   int* iak;   ///< Block numbers \c Bi for the neighbor list, `lst`. Every \c Bi is duplicated 
+               ///< several times to match its padded neighbors in #lst.
                ///< One \c Bi corresponds to #BLOCK neighbors.
+   int* iak_idmap;  // index map for iak during sorting 
+   int* lst_tmp;     // temporary lst array for sorting
 
    const real* x; ///< Reference of the coordinates.
    const real* y; ///< Reference of the coordinates.
@@ -129,6 +137,7 @@ TINKER_EXTERN SpatialUnit vspatial_v2_unit;
 TINKER_EXTERN SpatialUnit uspatial_v2_unit;
 TINKER_EXTERN SpatialUnit mspatial_v2_unit;
 TINKER_EXTERN SpatialUnit dspspatial_v2_unit;
+TINKER_EXTERN SpatialUnit nnspatial_v2_unit;  // for NN terms
 
 constexpr int cspatial_fresh_mask_echglj = 0x00000001;
 

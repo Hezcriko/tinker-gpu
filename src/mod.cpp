@@ -29,3 +29,6 @@
 #include "tool/gpucard.h"
 #include "tool/platform.h"
 #include "tool/rcman.h"
+
+#include "nn/nn.h"
+#include "ff/ennintermol.h"

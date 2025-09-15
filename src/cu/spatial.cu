@@ -1,15 +1,20 @@
 #include "ff/box.h"
 #include "ff/image.h"
 #include "ff/spatial.h"
+#include "ff/molecule.h"
+#include "ff/evalence.h"
+#include "seq/add.h"
 #include "seq/copysign.h"
 #include "seq/imagefc.h"
 #include "seq/launch.h"
 #include "seq/triangle.h"
 #include "tool/error.h"
 #include "tool/thrustcache.h"
+#include <numeric>
 // Eventually thrust will drop c++11 support.
 #define THRUST_IGNORE_DEPRECATED_CPP_DIALECT
 #include <thrust/sort.h>
+#include <thrust/gather.h>
 
 // step 1 2
 namespace tinker {
@@ -310,6 +315,7 @@ void spatialStep3(int nak, int* restrict akpf, int* nakpl_ptr0, //
    int ns3, int (*restrict js3)[2],                             //
    int ns4, int (*restrict js4)[2])
 {
+   // int idx = 13;
    // D.1 Pairwise flag for (block i - block i) is always set.
    for (int i = threadIdx.x + blockIdx.x * blockDim.x; i < nak; i += blockDim.x * gridDim.x) {
       spatialStep3AtomicOr(i, i, akpf, nakpl_ptr0);
@@ -323,26 +329,31 @@ void spatialStep3(int nak, int* restrict akpf, int* nakpl_ptr0, //
    maxns = max(maxns, ns4);
    for (int i = threadIdx.x + blockIdx.x * blockDim.x; i < maxns; i += blockDim.x * gridDim.x) {
       int x0, y0;
+
       if (nstype >= 1 and i < ns1) {
          x0 = bnum[js1[i][0]] / WARP_SIZE;
          y0 = bnum[js1[i][1]] / WARP_SIZE;
          spatialStep3AtomicOr(x0, y0, akpf, nakpl_ptr0);
       }
+
       if (nstype >= 2 and i < ns2) {
          x0 = bnum[js2[i][0]] / WARP_SIZE;
          y0 = bnum[js2[i][1]] / WARP_SIZE;
          spatialStep3AtomicOr(x0, y0, akpf, nakpl_ptr0);
       }
+
       if (nstype >= 3 and i < ns3) {
          x0 = bnum[js3[i][0]] / WARP_SIZE;
          y0 = bnum[js3[i][1]] / WARP_SIZE;
          spatialStep3AtomicOr(x0, y0, akpf, nakpl_ptr0);
       }
+
       if (nstype >= 4 and i < ns4) {
          x0 = bnum[js4[i][0]] / WARP_SIZE;
          y0 = bnum[js4[i][1]] / WARP_SIZE;
          spatialStep3AtomicOr(x0, y0, akpf, nakpl_ptr0);
       }
+
    }
 }
 
@@ -427,7 +438,8 @@ void spatialStep5(const int* restrict bnum, const int* restrict iakpl_rev, int n
    Spatial::ScaleInfo si1, Spatial::ScaleInfo si2, Spatial::ScaleInfo si3, Spatial::ScaleInfo si4,
    int* restrict dev_niak, int* restrict iak, int* restrict lst, int n, int nak, real cutbuf,
    TINKER_IMAGE_PARAMS, const int* restrict akpf, const Spatial::SortedAtom* restrict sorted,
-   const Spatial::Center* restrict akc, const Spatial::Center* restrict half)
+   const Spatial::Center* restrict akc, const Spatial::Center* restrict half, 
+   bool nblist4nn, int ngrps_nn, const int* restrict grps_nn, const int* restrict grplist)
 {
    int maxns = -1;
    maxns = max(maxns, si1.ns);
@@ -480,8 +492,10 @@ void spatialStep5(const int* restrict bnum, const int* restrict iakpl_rev, int n
    // Every warp loads a block of atoms as "i-block", denoted by "wy".
    // All threads in this warp cache the same "center" info.
    // Each thread holds the position of a unique atom.
-   for (int wy = iwarp; wy < nak - 1; wy += nwarp) {
+   // `nblist4nn` is for controlling whether to create arrays of neighbors for NN terms or list of pairs for tranditional AMOEBA terms.
+   for (int wy = iwarp; wy < (nblist4nn ? nak : nak - 1); wy += nwarp) {
       int atomi = wy * WARP_SIZE + ilane;
+
       real xi = sorted[atomi].x;
       real yi = sorted[atomi].y;
       real zi = sorted[atomi].z;
@@ -516,14 +530,14 @@ void spatialStep5(const int* restrict bnum, const int* restrict iakpl_rev, int n
       //
       //    Collecting the bits of wx from every thread in this warp, a 32-bit integer is obtained.
       //    All threads in this warp will then work on these atom blocks together, one at a time.
-      for (int wx0 = wy + 1; wx0 < nak; wx0 += WARP_SIZE) {
+      for (int wx0 = nblist4nn ? 0 : wy + 1; wx0 < nak; wx0 += WARP_SIZE) {
          int wx = wx0 + ilane;
          bool calcwx = wx < nak; // wx cannot exceed nak-1.
 
          // Check if this block pair has been recorded
          if (calcwx) {
             int iw, iwa, iwb;
-            iw = xy_to_tri(wx, wy);
+            iw = xy_to_tri(max(wx, wy), min(wx, wy));
             iwa = iw / WARP_SIZE;
             iwb = iw & (WARP_SIZE - 1);
             if (akpf[iwa] & (1 << iwb))
@@ -675,7 +689,8 @@ void spatialStep5(const int* restrict bnum, const int* restrict iakpl_rev, int n
                int bufp = i * WARP_SIZE + ilane;
                int val = buffer[bufp];
                __syncwarp();
-               int num = bufp < nknb ? val : 0;
+               int num = nblist4nn ? -1 : 0;  // use different padding values for nblist for NN and non-NN terms
+               num = bufp < nknb ? val : num;
                lst[(pos + i) * WARP_SIZE + ilane] = num;
             }
          }
@@ -694,7 +709,8 @@ void Spatial::RunStep5(SpatialUnit u)
       u->si4,                                  //
       dev_niak, u->iak, u->lst,                //
       u->n, u->nak, cutbuf, TINKER_IMAGE_ARGS, //
-      u->akpf, u->sorted, u->akc, u->half);
+      u->akpf, u->sorted, u->akc, u->half, 
+      u->nblist4nn, ngrps_nnvalence, grps_nnvalence, grp.grplist);
    darray::copyout(g::q0, 1, &u->niak, dev_niak);
    waitFor(g::q0);
    if (u->niak > u->nak * Spatial::LSTCAP) {
@@ -710,6 +726,12 @@ void Spatial::RunStep5(SpatialUnit u)
 }
 
 namespace tinker {
+
+struct alignas(128) intx32
+{
+   int a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20, a21, a22, a23, a24, a25, a26, a27, a28, a29, a30, a31, a32;
+};
+
 void spatialDataInit_cu(SpatialUnit u)
 {
    u->fresh = -1; // 0xFFFFFFFF;
@@ -789,6 +811,18 @@ void spatialDataInit_cu(SpatialUnit u)
    } else {
       assert(false);
    }
+
+   // TODO sort iak and lst
+   if (u->nblist4nn) {
+      std::vector<int> idmap_host(u->niak);
+      std::iota(idmap_host.begin(), idmap_host.end(), 0);
+      darray::copyin(g::q0, u->niak, u->iak_idmap, idmap_host.data());
+      waitFor(g::q0);
+      thrust::stable_sort_by_key(policy, u->iak, u->iak + u->niak, u->iak_idmap);
+      darray::copy(g::q0, u->niak*32, u->lst_tmp, u->lst);
+      thrust::gather(policy, u->iak_idmap, u->iak_idmap + u->niak, (intx32*) u->lst_tmp, (intx32*) u->lst);
+   }
+
 }
 
 __global__
